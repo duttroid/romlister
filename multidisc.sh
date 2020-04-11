@@ -1,12 +1,18 @@
 #!/bin/bash
 
 # Prompt user to enter ROM directory
+
 read -p "Enter the full ROM path (example: /home/pi/RetroPie/roms/nes): " ROMPATH
 
-read -p "Enter the file extension for the existing ROMs/images (example (ENTER ONE ONLY. NO LEADING PERIOD.)): nes zip chd): " EXTENSION
+read -p "FOR MULTI-DISC ROMS/IMAGES: Enter the file extension for the existing ROMs/images. ENTER ONE ONLY. NO LEADING PERIOD. Example: nes zip chd: " EXTENSION
+
+read -p "Enter the full path to the directory in which you want romlists/gamelists saved: " LISTDEST
 
 echo "ROM path is: " "$ROMPATH"
 echo "File extension is: " "$EXTENSION"
+
+SYSTEM=$ROMPATH | (rev | cut -f1 -d"/" | rev)
+echo "System is: $SYSTEM"
 
 # find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "(Disc [1-9]",
 # cut (by field) all directories in the path except for the ROM/image file name, save this filename in the list multidisc_game_files.txt,
@@ -44,7 +50,14 @@ done < "$input"
 # Remove the multidisc_game_files.txt and multidisc_games.txt files, as they are no longer needed.
 rm "$ROMPATH"/multidisc_game*.txt
 
-#todo: edit the rompath such that /home/pi/RetroPie/roms/ is built into the variable (user specifies only the last branch of the directory tree)
+find "$ROMPATH" -maxdepth 1 -type f -exec ls {} \; | (rev | cut -f1 -d"/" | rev) | sort -u | less | tee "$LISTDEST"/rom_list.txt | (rev | cut -f2 -d"." | rev) | tee "$LISTDEST"/game_list.txt
+
+input="$LISTDEST"/game_list.txt
+while IFS= read -r LINE
+do
+	echo "$LINE,$LINE;;;;;;;;;;;;;;" >> "$LISTDEST/$SYSTEM_romlist".txt
+done < "$input"
+
 #todo: backup gamelists when this script is run (date+gamelists+backup or date+romlists directory+backup alongside the original in the same hierarchy level).
 #todo: generate gamelists after multidisc roms/images are moved to multidisc_games
 #todo: move roms/images from multidisc_games directory to original rom directory when gamelist is complete
