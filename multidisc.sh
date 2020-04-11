@@ -12,7 +12,7 @@ echo "File extension is: " "$EXTENSION"
 # cut (by field) all directories in the path except for the ROM/image file name, save this filename in the list multidisc_game_files.txt,
 # Stream edit the listing to remove,  " (Disc [1-9].chd)", sort this list and filter unique entries, copy the results into multidisc_games.txt.
 
-find "$ROMPATH"/*."$EXTENSION" -type f -exec ls {} \; | grep "(Disc [1-9])" | (rev | cut -f1 -d"/" | rev) | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ (Disc [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
+find "$ROMPATH" -maxdepth 1 -name "*.$EXTENSION" -type f -exec ls {} \; | grep "(Disc [1-9])" | (rev | cut -f1 -d"/" | rev) | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ (Disc [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
 
 # todo: generate gamelists for Emulationstation and Attract Mode.  Copy each to /home/pi/gamelists-romlists as well as the default directory for Emulationstation gamelists and Attract Mode romlists
 # todo: figure out file extension flexibility
