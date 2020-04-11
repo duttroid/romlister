@@ -50,4 +50,3 @@ rm "$ROMPATH"/multidisc_game*.txt
 #todo: set this script as a command in raspbian
 #todo: add command line option to skip gamelist generation
 #todo: directory selector / gui?
-#todo: put this on github, yo!
