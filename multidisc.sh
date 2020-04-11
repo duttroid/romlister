@@ -1,29 +1,29 @@
 #!/bin/bash
 
+# Prompt user to enter ROM directory
 read -p "Enter the full ROM path (example: /home/pi/RetroPie/roms/nes): " ROMPATH
+
 read -p "Enter the file extension for the existing ROMs/images (example (ENTER ONE ONLY. NO LEADING PERIOD.)): nes zip chd): " EXTENSION
 
 echo "ROM path is: " "$ROMPATH"
 echo "File extension is: " "$EXTENSION"
 
-# find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "(Disc [1-9]", cut out some characters from each entry (ideally, the path to the file, edit each line that's returned to omit the string " (Disc [1-5].chd)", sort this list with and filter unique entries, copy the results into multidisc_games.txt.
+# find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "(Disc [1-9]",
+# cut (by field) all directories in the path except for the ROM/image file name, save this filename in the list multidisc_game_files.txt,
+# Stream edit the listing to remove,  " (Disc [1-9].chd)", sort this list and filter unique entries, copy the results into multidisc_games.txt.
 
-# find /media/usb/roms/Sony\ PlayStation/*.chd -type f -exec ls -Q {} \; | grep "(Disc [1,2,3,4,5,6,7,8,9])" | cut -f 6 -d "/" | sed 's/ (Disc [1-9]).chd'// | sort -u | tee multidisc_games.txt | mkdir -p
-# find /media/usb/roms/Sony\ PlayStation/*.chd -type f -exec ls {} \; | grep "(Disc [1-9])" | cut -f 6 -d "/" | sed 's/ (Disc [1-9]).chd'// | sort -u | tee multidisc_games.txt
-find "$ROMPATH"/*."$EXTENSION" -type f -exec ls {} \; | grep "(Disc [1-9])" | cut -f 7 -d "/" | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ (Disc [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
+find "$ROMPATH"/*."$EXTENSION" -type f -exec ls {} \; | grep "(Disc [1-9])" | (rev | cut -f1 -d"/" | rev) | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ (Disc [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
 
-# The intent here is to read each line from multidisc_games.txt as the variable GAMENAME, and for each instance, list all files containing GAMENAME within the filename, and output this list to GAMENAME.m3u.
-# for GAMENAME in $(cat multidisc_games.txt)
+# todo: generate gamelists for Emulationstation and Attract Mode.  Copy each to /home/pi/gamelists-romlists as well as the default directory for Emulationstation gamelists and Attract Mode romlists
+# todo: figure out file extension flexibility
 
-
-#todo: prompt user for rompath and use rompath as the path argument for `find` (probably guide user to enter full path for flexibility, or use . for current directory)
-#todo: move each file to subfolder multidisc_games after appending m3u files
-#todo: backup Emulationstation gamelists and Attract Mode romlists - add date to each folder
-#todo: generate gamelists for Emulationstation and Attract Mode.  Copy each to /home/pi/gamelists-romlists as well as the default directory for Emulationstation gamelists and Attract Mode romlists
-#todo: figure out file extension flexibility
-#todo: figure out how to cut to last field of /PATH/TO/FILE
+# Make folder multidisc_games inside $ROMPATH.  All multidisc games get moved here.
 
 mkdir "$ROMPATH"/multidisc_games
+
+
+# Generate /.m3u files for each game.  Read the file multidisc_games.txt.  List and grep each line of multidisc_game_files.txt in $ROMPATH,
+# and add each entry into an m3u file named after the current line ($LINE).
 
 input="$ROMPATH"/multidisc_games.txt
 while IFS= read -r LINE
@@ -31,18 +31,21 @@ do
 	ls "$ROMPATH"/*\(Disc\ ?\)."$EXTENSION"  | grep "$LINE" >> "$ROMPATH"/"$LINE".m3u
 done < "$input"
 
+
+# Read multidisc_game_files.txt. Each entry corresponds to a file in the ROM directory.  Move each file to /multidsic_games.
+# This will help to ensure that only any .m3u files are populated for multi-disc games.
+
 input="$ROMPATH"/multidisc_game_files.txt
 while IFS= read -r LINE
 do
 	mv "$ROMPATH"/"$LINE" "$ROMPATH"/multidisc_games/
 done < "$input"
 
-
-
+# Remove the multidisc_game_files.txt and multidisc_games.txt files, as they are no longer needed.
 rm "$ROMPATH"/multidisc_game*.txt
 
 #todo: edit the rompath such that /home/pi/RetroPie/roms/ is built into the variable (user specifies only the last branch of the directory tree)
-#todo: backup gamelists when this script is run (date+gamelists+backup or date+romlists directory+backup alongside the original in the same hierarchy level.
+#todo: backup gamelists when this script is run (date+gamelists+backup or date+romlists directory+backup alongside the original in the same hierarchy level).
 #todo: generate gamelists after multidisc roms/images are moved to multidisc_games
 #todo: move roms/images from multidisc_games directory to original rom directory when gamelist is complete
 #todo: remove empty multidisc_games directory after roms are returned to their original directory
