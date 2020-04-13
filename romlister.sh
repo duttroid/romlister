@@ -84,7 +84,6 @@ echo "<gameList>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 
 
 # define variables for Emulationstation gamelist.xml and store the appropriate strings for an xml in each variable.
-#SYSTEM=$(echo "$ROMPATH" | (rev | cut -f1 -d"/" | rev))
 input="$LISTDEST"/"$SYSTEM"/rom_list.txt
 while IFS= read -r LINE
 do
@@ -101,6 +100,11 @@ done < "$input"
 
 echo "</gamelist>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 
+sed -i 's/&/&amp;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml # < this appears to work
+#sed -i 's/"\""/&quot;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this doesn't work
+#sed -i 's/\'/&apos;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this doesn't work
+#sed -i 's/</&lt;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this fucks up the xml
+#sed -i 's/>/&gt;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this fucks up the xml
 
 #Cleanup time
 #remove rom_list_no_extensions.txt and rom_list.txt as they are no longer needed.
