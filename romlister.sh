@@ -5,7 +5,7 @@ read -p "Enter the full ROM path (example: /home/pi/RetroPie/roms/nes): " ROMPAT
 
 
 # store the file extension in $EXTENSION
-read -p "FOR MULTI-DISC ROMS/IMAGES: Enter the file extension for the existing ROMs/images. ENTER ONE ONLY. NO LEADING PERIOD. Example: nes zip chd: " EXTENSION
+read -p "ONLY FOR MULTI-DISC ROMS/IMAGES: Enter the file extension for the existing ROMs/images. ENTER ONE ONLY. NO LEADING PERIOD. Example: nes zip chd: " EXTENSION
 
 
 # Create $LISTDEST, the destination directory in which romlists and gamelists will be saved.
@@ -20,7 +20,7 @@ echo "ROM path is: " "$ROMPATH"
 echo "File extension is: " "$EXTENSION"
 
 
-#store the system folder name in $SYSTEM.  This will be used to ensure correspondence with the correct rom folder.
+# Store the system folder name in $SYSTEM.  This will be used to ensure correspondence with the correct rom folder.
 SYSTEM=$(echo "$ROMPATH" | (rev | cut -f1 -d"/" | rev))
 echo "System is: $SYSTEM"
 
@@ -29,7 +29,7 @@ echo "System is: $SYSTEM"
 mkdir -p "$LISTDEST"/"$SYSTEM"
 
 
-# find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "(Disc [1-9]",
+# Find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "(Disc [1-9]",
 # cut (by field) all directories in the path except for the ROM/image file name, save this filename in the list multidisc_game_files.txt,
 # Stream edit the listing to remove,  " (Disc [1-9].chd)", sort this list and filter unique entries, copy the results into multidisc_games.txt.
 find "$ROMPATH" -maxdepth 1 -name "*.$EXTENSION" -type f -exec ls {} \; | grep "(Disc [1-9])" | (rev | cut -f1 -d"/" | rev) | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ (Disc [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
@@ -78,9 +78,14 @@ do
 done < "$input"
 
 
-#create gamelist.xml
+# create gamelist.xml
 echo "<?xml version=\"1.0\"?>" > "$LISTDEST"/"$SYSTEM"/gamelist.xml
 echo "<gameList>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
+
+
+# replace XML character entities in rom_list.txt which will be read and used to generate gamelist.xml.  
+# We don't use sed directly on gamelist.xml because in an XML, character entities that already exist must remain intact.
+sed -i "s/\&/\&amp;/;s/>/\&gt;/;s/</\&lt;/;s/'/\&apos;/;s/\"/\&quot;/" "$LISTDEST"/"$SYSTEM"/rom_list.txt
 
 
 # define variables for Emulationstation gamelist.xml and store the appropriate strings for an xml in each variable.
@@ -88,7 +93,6 @@ input="$LISTDEST"/"$SYSTEM"/rom_list.txt
 while IFS= read -r LINE
 do
 #todo: make these echo statements more efficient.  Should only take 1 echo statement, but I'm doing something wrong or getting thrown off by nano's syntax highlighitng right now.
-#todo: be sure to handle ampersand and all special characters  correctly.  find and replace the & character with &amp; - can one find and replace using just the command line?
 	echo "	<game>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 	echo "		<path>./$LINE<path>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 	echo "		<name>$(echo $LINE | (rev | cut -f2- -d"." | rev))</name>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
@@ -98,25 +102,20 @@ do
 	echo "	</game>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 done < "$input"
 
+
+#The final line of gamelist.xml
 echo "</gamelist>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 
-sed -i 's/&/&amp;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml # < this appears to work
-#sed -i 's/"\""/&quot;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this doesn't work
-#sed -i 's/\'/&apos;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this doesn't work
-#sed -i 's/</&lt;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this fucks up the xml
-#sed -i 's/>/&gt;/g' "$LISTDEST"/"$SYSTEM"/gamelist.xml < this fucks up the xml
 
 #Cleanup time
 #remove rom_list_no_extensions.txt and rom_list.txt as they are no longer needed.
-
 rm "$LISTDEST"/"$SYSTEM"/rom_list.txt
 rm "$LISTDEST"/"$SYSTEM"/rom_list_no_extensions.txt
 mv "$ROMPATH"/multidisc_games/* "$ROMPATH"
 rm -d "$ROMPATH"/multidisc_games
 
 
-#todo: generate gamelists for Emulationstation and Attract Mode.  Copy each to /home/pi/gamelists-romlists as well as the default directory for Emulationstation gamelists and Attract Mode romlists
-#todo: backup gamelists when this script is run (date+gamelists+backup or date+romlists directory+backup alongside the original in the same hierarchy level).
+#todo: force paths for RetroPie?
 #todo: set this script as a command in raspbian
 #todo: add command line option to skip gamelist generation
 #todo: directory selector / gui?
