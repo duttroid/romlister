@@ -8,8 +8,14 @@ read -p "Enter the full ROM path (example: /home/pi/RetroPie/roms/nes): " ROMPAT
 read -p "ONLY FOR MULTI-DISC ROMS/IMAGES: Enter the file extension for the existing ROMs/images. ENTER ONE ONLY. NO LEADING PERIOD. Example: nes zip chd: " EXTENSION
 
 
+# If there are multi-disc titles, what's the identifier in the filename? Examples: Disc, Disk, Tape, Side?
+read -p "FOR MULTIDISC GAMES: Enter the type of media that's designated in the filenames. Example: Disc Disk Tape Side: " MEDIA
+
+
+
 # Create $LISTDEST, the destination directory in which romlists and gamelists will be saved.
 read -p "Enter the full path to the directory in which you want romlists/gamelists saved: " LISTDEST
+
 
 
 # Confirm the $ROMPATH so the user has a hint of where to look in case they believe anything fucks up.
@@ -29,10 +35,10 @@ echo "System is: $SYSTEM"
 mkdir -p "$LISTDEST"/"$SYSTEM"
 
 
-# Find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "(Disc [1-9]",
+# Find any files (not directories) with filenames containing the provided specifications, list them if and only if the filename contains the expression "($MEDIA [1-9]",
 # cut (by field) all directories in the path except for the ROM/image file name, save this filename in the list multidisc_game_files.txt,
-# Stream edit the listing to remove,  " (Disc [1-9].chd)", sort this list and filter unique entries, copy the results into multidisc_games.txt.
-find "$ROMPATH" -maxdepth 1 -name "*.$EXTENSION" -type f -exec ls {} \; | grep "(Disc [1-9])" | (rev | cut -f1 -d"/" | rev) | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ (Disc [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
+# Stream edit the listing to remove,  " ($MEDIA [1-9].chd)", sort this list and filter unique entries, copy the results into multidisc_games.txt.
+find "$ROMPATH" -maxdepth 1 -name "*.$EXTENSION" -type f -exec ls {} \; | grep "($MEDIA [1-9])" | (rev | cut -f1 -d"/" | rev) | tee "$ROMPATH"/multidisc_game_files.txt | sed "s/ ($MEDIA [1-9]).$EXTENSION"// | sort -u | tee "$ROMPATH"/multidisc_games.txt
 
 
 # Make folder multidisc_games inside $ROMPATH.  All multidisc games get moved here.
@@ -44,7 +50,7 @@ mkdir "$ROMPATH"/multidisc_games
 input="$ROMPATH"/multidisc_games.txt
 while IFS= read -r LINE
 do
-	ls "$ROMPATH"/*\(Disc\ ?\)."$EXTENSION"  | grep "$LINE" >> "$ROMPATH"/"$LINE".m3u
+	ls "$ROMPATH"/*\("$MEDIA"\ ?\)."$EXTENSION"  | grep "$LINE" | (rev | cut -f1 -d"/" | rev) >> "$ROMPATH"/"$LINE".m3u
 done < "$input"
 
 
@@ -94,11 +100,11 @@ while IFS= read -r LINE
 do
 #todo: make these echo statements more efficient.  Should only take 1 echo statement, but I'm doing something wrong or getting thrown off by nano's syntax highlighitng right now.
 	echo "	<game>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
-	echo "		<path>./$LINE<path>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
+	echo "		<path>./$LINE</path>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 	echo "		<name>$(echo $LINE | (rev | cut -f2- -d"." | rev))</name>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 	echo "		<image>$(echo ./boxart/$LINE | (rev | cut -f2- -d"." | rev)).png</image>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 	echo "		<marquee>$(echo ./wheel/$LINE | (rev | cut -f2- -d"." | rev)).png</marquee>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
-	echo "		<video>$(echo ./snap/$LINE | (rev | cut -f2- -d"." | rev)).png</video>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
+	echo "		<video>$(echo ./snap/$LINE | (rev | cut -f2- -d"." | rev)).mp4</video>"  >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 	echo "	</game>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 done < "$input"
 
