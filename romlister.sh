@@ -110,7 +110,7 @@ done < "$input"
 
 
 #The final line of gamelist.xml
-echo "</gamelist>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
+echo "</gameList>" >> "$LISTDEST"/"$SYSTEM"/gamelist.xml
 
 
 #Cleanup time
